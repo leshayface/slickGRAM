@@ -89,17 +89,17 @@ php artisan tinker
 >>>  Slick::factory()->create(['user_id' => 1]);
 
 
-//now in the home page you can make the hard coded slicks dynamic
+//now in the home page you can make the hard coded slicks dynamic - assuming you have access to a slick (which you don't yet)
 @foreach ($slicks as $slick)
   @include('_slick') //render partial _slick.blade.php
-@endforeach
+@endforeach  
 
 
 //then in your _slick partial file - assuming you have access to a slick (which you don't yet) - we can add the dynamic data
 <h5 class="font-bold mb-4">{{$slick->user->name}}</h5>
 <p class="text-sm">{{$slick->body}}</p>
 
-//now we need to pass the slicks to the _slick partial file
+//now we need to pass the slicks to the home and _slick partial file
 //in home controller import Slick model
 use App\Models\Slick;
 
@@ -111,6 +111,13 @@ public function index()
         ]);
     }
 
+    //OR to order it by latest slicks first
+
+public function index()
+    $slicks = Slick::latest()->get();
+    return view('home',[
+        'slicks' => $slicks
+    ]);
 
 //you will get an error about the user name you're trying to call in the _slicks partial
 //because you have not yet setup a User -> Slick relationship
@@ -118,12 +125,57 @@ public function user() {
   return $this->belongsTo(User::class);
 }
 
+//we don't actually want all the slicks. We want the users timeline.
+//so in our home controller
 
-//images (_slick partial)
+public function index()
+    {
+        return view('home',[
+            'slicks' => auth()->user()->timeline();
+        ]);
+    }
+
+//then in USER MODEL fetch the users slicks
+public function timeline()
+    {
+        return Slick::latest()->get();
+    }
+
+
+//BUT this code will fail as soon as we have slicks by someone we don't follow. For now lets:
+//in USER MODEL
+public function timeline()
+    {
+        return Slick::where('user_id', $this->id)->latest()->get();
+    }
+
+
+// we can store the image by users email in a getter in the user model and fetch it
+
+//USER MODEL add getter
+public function getAvatarAttribute() {
+    return "https://i.pravatar.cc/40?u=" . $this->email;
+}
+
+
+//then in publish-slick-panel fetch the image of the logged in user
+<footer class="flex justify-between">
+            <img 
+                src="{{ auth()->user()->avatar }}"
+                alt="" 
+                class="rounded-full mr-2"
+            >
+        <button type="submit" class="bg-blue-500 rounded-lg shadow py-2 px-2 text-white">slick-a-roo!</button>
+
+        </footer>
+
+
+
+//but in the _slick partial (timeline) we need to get the image of user who created the tweet
 <div class="flex p-4 border-b border-b gray-400">
     <div class="mr-2 flex-shrink-0">
         <img 
-            src="https://i.pravatar.cc/40?u={{$slick->user->email}}"
+            src="{{ $tweet->user->avatar }}"
             alt="" 
             class="rounded-full mr-2"
         >
@@ -135,4 +187,3 @@ public function user() {
         <p class="text-sm">{{$slick->body}}</p>
     </div>   
 </div>
-

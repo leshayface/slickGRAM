@@ -24,8 +24,9 @@ class HomeController extends Controller
      */
     public function index()
     {
-        return view('home', [
-            'slicks' => auth()->user()->timeline()
+        $slicks = Slick::latest()->gets()
+        return view('home',[
+            'slicks' => $slicks
         ]);
     }
 }

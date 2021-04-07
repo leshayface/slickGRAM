@@ -40,4 +40,22 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+
+    public function getAvatarAttribute() {
+        return "https://i.pravatar.cc/40?u=" . $this->email;
+    }
+
+    public function timeline()
+    {
+        return Slick::latest()->get();
+    }
+
+    public function follow(User $user) {
+        return $this->follows()->save($user)
+    }
+
+    public function follows() {
+        //be explicit that table name is not user_user. Also specify ids.
+        return $this->belongsToMany(User::class, 'follows', 'user_id', 'following_user_id');
+    }
 }
